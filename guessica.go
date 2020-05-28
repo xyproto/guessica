@@ -42,137 +42,6 @@ func unquote(s string) string {
 	return s
 }
 
-// GuessSourceString is the function that is meant to be used from this source file
-// It takes the contents of a PKGBUILD file and returns a new "source=" string.
-// The new version number is guessed after looking online for a newer source.
-// The git commit is included in the "source=" string, if possible.
-// Returns the new pkgver and the new source.
-func GuessSourceString(pkgbuildContents string) (string, string, error) {
-	lines := strings.Split(pkgbuildContents, "\n")
-	var rawURL, rawSource string
-	inSource := false
-	for _, line := range lines {
-		// First remove trailing comments
-		if strings.Contains(line, " #") {
-			parts := strings.SplitN(line, " #", 2)
-			line = parts[0]
-		}
-		// Then check if we're in the source=() definition
-		if inSource && len(strings.TrimSpace(line)) != 0 && !strings.Contains(line, "=") {
-			rawSource += line
-			continue
-		} else {
-			inSource = false
-		}
-		// Save url, pkgver, pkgrel and source
-		if strings.HasPrefix(line, "url=") {
-			rawURL = line[4:]
-			//} else if strings.HasPrefix(line, "pkgver=") {
-			//	rawPkgver = line[7:]
-			//} else if strings.HasPrefix(line, "pkgrel=") {
-			//	rawPkgrel = line[7:]
-		} else if strings.HasPrefix(line, "source=") {
-			rawSource = line[7:]
-			inSource = true
-		}
-	}
-	url := unquote(strings.TrimSpace(rawURL))
-
-	if len(url) == 0 {
-		return "", "", errors.New("found no URL definition")
-	}
-
-	shortURL := url
-	if strings.HasPrefix(url, "http://") {
-		shortURL = url[7:]
-	} else if strings.HasPrefix(url, "https://") {
-		shortURL = url[8:]
-	}
-
-	if strings.Contains(url, "github.com/") && !strings.Contains(url, "/releases/") {
-		if strings.HasSuffix(url, "/") {
-			url += "releases/latest"
-		} else {
-			url += "/releases/latest"
-		}
-	}
-
-	//fmt.Println("raw source: ", rawSource)
-	//fmt.Println("raw URL: ", rawURL)
-	//fmt.Println("url: ", url)
-	//fmt.Println("short URL: ", shortUrl)
-	//fmt.Println("pkgver", pkgver)
-	//fmt.Println("pkgrel", pkgrel)
-
-	//fmt.Println("getver: " + url)
-	newVer, err := getver(url)
-	if err != nil {
-		return "", "", errors.New("could not guess a version number by visiting " + url)
-	}
-
-	gotCommit := ""
-
-	// git ls-remote https://github.com/xyproto/o 2.9.2
-
-	tag := newVer
-	cmd := exec.Command("git", "ls-remote", "-t", "https://"+shortURL, tag)
-	data, err := cmd.CombinedOutput()
-	if err != nil || len(bytes.TrimSpace(data)) == 0 {
-		// Add a "v" in front of the tag
-		cmd = exec.Command("git", "ls-remote", "-t", "https://"+shortURL, "v"+tag)
-		data, err = cmd.CombinedOutput()
-		if err != nil || len(bytes.TrimSpace(data)) == 0 {
-			return "", "", errors.New("got no git commit has from tag " + tag + " or tag v" + tag + " at " + shortURL)
-		}
-		gotCommit = strings.TrimSpace(string(data))
-		tag = "v" + newVer
-	} else {
-		gotCommit = strings.TrimSpace(string(data))
-	}
-
-	//fmt.Println("new version: " + newVer)
-	//fmt.Println("new commit: " + gotCommit)
-
-	if len(gotCommit) == 0 {
-		return "", "", errors.New("got no git commit for tag " + tag + " or tag v" + tag)
-	}
-
-	fields := strings.Fields(gotCommit)
-	if len(fields) > 0 {
-		gotCommit = fields[0]
-	}
-
-	//fmt.Println("got commit: " + gotCommit)
-
-	source := rawSource
-	newSource := ""
-	if len(gotCommit) != 0 && strings.Contains(source, "#commit=") {
-		pos := strings.Index(source, "#commit=")
-		if pos == -1 {
-			return "", "", errors.New("found no #commit= in source")
-		}
-		pos += len("#commit=")
-		if pos+len(gotCommit) < len(source) {
-			// replace the existing commit hash, which is assumed to be as long as the new one
-			newSource = source[:pos] + gotCommit + source[pos+len(gotCommit):]
-		} else {
-			// the existing commit has was too short, just replace the rest of the line
-			newSource = source[:pos] + gotCommit + "\")"
-		}
-	}
-
-	// add a tag commit
-	if strings.HasSuffix(newSource, ")") {
-		newSource += " # tag: " + tag
-	}
-
-	if len(newVer) == 0 {
-		return "", "", errors.New("found no new version number")
-	}
-
-	return "pkgver=" + newVer, "source=" + newSource, nil
-}
-
 func linkIsPage(url string) bool {
 	// If the link ends with an extension, make sure it's .html
 	if strings.HasSuffix(url, ".html") || strings.HasSuffix(url, ".htm") {
@@ -775,4 +644,135 @@ func getver(v string) (string, error) {
 		}
 		return "", errors.New("no results, no errors, no output")
 	}
+}
+
+// GuessSourceString is the function that is meant to be used from this source file
+// It takes the contents of a PKGBUILD file and returns a new "source=" string.
+// The new version number is guessed after looking online for a newer source.
+// The git commit is included in the "source=" string, if possible.
+// Returns the new pkgver and the new source.
+func GuessSourceString(pkgbuildContents string) (string, string, error) {
+	lines := strings.Split(pkgbuildContents, "\n")
+	var rawURL, rawSource string
+	inSource := false
+	for _, line := range lines {
+		// First remove trailing comments
+		if strings.Contains(line, " #") {
+			parts := strings.SplitN(line, " #", 2)
+			line = parts[0]
+		}
+		// Then check if we're in the source=() definition
+		if inSource && len(strings.TrimSpace(line)) != 0 && !strings.Contains(line, "=") {
+			rawSource += line
+			continue
+		} else {
+			inSource = false
+		}
+		// Save url, pkgver, pkgrel and source
+		if strings.HasPrefix(line, "url=") {
+			rawURL = line[4:]
+			//} else if strings.HasPrefix(line, "pkgver=") {
+			//	rawPkgver = line[7:]
+			//} else if strings.HasPrefix(line, "pkgrel=") {
+			//	rawPkgrel = line[7:]
+		} else if strings.HasPrefix(line, "source=") {
+			rawSource = line[7:]
+			inSource = true
+		}
+	}
+	url := unquote(strings.TrimSpace(rawURL))
+
+	if len(url) == 0 {
+		return "", "", errors.New("found no URL definition")
+	}
+
+	shortURL := url
+	if strings.HasPrefix(url, "http://") {
+		shortURL = url[7:]
+	} else if strings.HasPrefix(url, "https://") {
+		shortURL = url[8:]
+	}
+
+	if strings.Contains(url, "github.com/") && !strings.Contains(url, "/releases/") {
+		if strings.HasSuffix(url, "/") {
+			url += "releases/latest"
+		} else {
+			url += "/releases/latest"
+		}
+	}
+
+	//fmt.Println("raw source: ", rawSource)
+	//fmt.Println("raw URL: ", rawURL)
+	//fmt.Println("url: ", url)
+	//fmt.Println("short URL: ", shortUrl)
+	//fmt.Println("pkgver", pkgver)
+	//fmt.Println("pkgrel", pkgrel)
+
+	//fmt.Println("getver: " + url)
+	newVer, err := getver(url)
+	if err != nil {
+		return "", "", errors.New("could not guess a version number by visiting " + url)
+	}
+
+	gotCommit := ""
+
+	// git ls-remote https://github.com/xyproto/o 2.9.2
+
+	tag := newVer
+	cmd := exec.Command("git", "ls-remote", "-t", "https://"+shortURL, tag)
+	data, err := cmd.CombinedOutput()
+	if err != nil || len(bytes.TrimSpace(data)) == 0 {
+		// Add a "v" in front of the tag
+		cmd = exec.Command("git", "ls-remote", "-t", "https://"+shortURL, "v"+tag)
+		data, err = cmd.CombinedOutput()
+		if err != nil || len(bytes.TrimSpace(data)) == 0 {
+			return "", "", errors.New("got no git commit has from tag " + tag + " or tag v" + tag + " at " + shortURL)
+		}
+		gotCommit = strings.TrimSpace(string(data))
+		tag = "v" + newVer
+	} else {
+		gotCommit = strings.TrimSpace(string(data))
+	}
+
+	//fmt.Println("new version: " + newVer)
+	//fmt.Println("new commit: " + gotCommit)
+
+	if len(gotCommit) == 0 {
+		return "", "", errors.New("got no git commit for tag " + tag + " or tag v" + tag)
+	}
+
+	fields := strings.Fields(gotCommit)
+	if len(fields) > 0 {
+		gotCommit = fields[0]
+	}
+
+	//fmt.Println("got commit: " + gotCommit)
+
+	source := rawSource
+	newSource := ""
+	if len(gotCommit) != 0 && strings.Contains(source, "#commit=") {
+		pos := strings.Index(source, "#commit=")
+		if pos == -1 {
+			return "", "", errors.New("found no #commit= in source")
+		}
+		pos += len("#commit=")
+		if pos+len(gotCommit) < len(source) {
+			// replace the existing commit hash, which is assumed to be as long as the new one
+			newSource = source[:pos] + gotCommit + source[pos+len(gotCommit):]
+		} else {
+			// the existing commit has was too short, just replace the rest of the line
+			newSource = source[:pos] + gotCommit + "\")"
+		}
+	}
+
+	// add a tag commit
+	if strings.HasSuffix(newSource, ")") {
+		newSource += " # tag: " + tag
+	}
+
+	if len(newVer) == 0 {
+		return "", "", errors.New("found no new version number")
+	}
+
+	return "pkgver=" + newVer, "source=" + newSource, nil
 }
