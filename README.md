@@ -12,11 +12,11 @@ Update a `PKGBUILD` file by guessing the latest version number and finding the l
 
 	guessica PKGBUILD
 
-## Notes
+## Note
 
 The `pkgver` and `source` arrays will be guessed by searching the project webpage as defined by the `url`. For for projects on GitHub, `github.com` may also be visited.
 
-Updating a `PKGBUILD` may or may not work. `guessica` is doing its best, by guessing. Take a backup of your `PKGBUILD` first, if you need to.
+Updating a `PKGBUILD` may or may not work. `guessica` will be doing its best, by guessing. Take a backup of your `PKGBUILD` first, if you need to.
 
 ## General info
 
