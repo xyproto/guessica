@@ -20,6 +20,6 @@ Updating a `PKGBUILD` may or may not work. `guessica` will be doing its best, by
 
 ## General info
 
-* Version: 0.0.1
+* Version: 0.0.2
 * License: MIT
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
