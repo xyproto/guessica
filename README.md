@@ -1,8 +1,8 @@
-# Guessica
+# Guessica [![Build Status](https://travis-ci.com/xyproto/guessica.svg?branch=master)](https://travis-ci.com/xyproto/guessica) [![Go Report Card](https://goreportcard.com/badge/github.com/xyproto/guessica)](https://goreportcard.com/report/github.com/xyproto/guessica) [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/xyproto/guessica/master/LICENSE)
+
+Update a `PKGBUILD` file by guessing the latest version number and finding the latest git tag and hash online.
 
 ![logo](img/guessica.svg)
-
-Update a PKGBUILD file by guessing the latest version number and finding the latest git tag and hash online.
 
 ## Installation (development version)
 
