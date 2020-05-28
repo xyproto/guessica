@@ -6,6 +6,7 @@ package guessica
 // This code is not particularly pretty and probably needs a good refactoring or two.
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -116,11 +117,11 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 	tag := newVer
 	cmd := exec.Command("git", "ls-remote", "-t", "https://"+shortURL, tag)
 	data, err := cmd.CombinedOutput()
-	if err != nil {
+	if err != nil || len(bytes.TrimSpace(data)) == 0 {
 		// Add a "v" in front of the tag
 		cmd = exec.Command("git", "ls-remote", "-t", "https://"+shortURL, "v"+tag)
 		data, err = cmd.CombinedOutput()
-		if err != nil {
+		if err != nil || len(bytes.TrimSpace(data)) == 0 {
 			return "", "", errors.New("got no git commit has from tag " + tag + " or tag v" + tag + " at " + shortURL)
 		}
 		gotCommit = strings.TrimSpace(string(data))
