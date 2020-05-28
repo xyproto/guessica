@@ -414,7 +414,7 @@ func versionNumbers(url string, maxResults, crawlDepth int, includeFilenames boo
 					if capCount > 1 {
 						ok = false
 					}
-					// If there is a captial letter and no dot, skip it
+					// If there is a capital letter and no dot, skip it
 					if ok && (capCount == 1) && !strings.Contains(word, ".") {
 						ok = false
 					}
@@ -589,7 +589,7 @@ func versionNumbers(url string, maxResults, crawlDepth int, includeFilenames boo
 						ok = false
 					}
 				}
-				// If the first digit is directly preceeded by a single letter, skip it
+				// If the first digit is directly preceded by a single letter, skip it
 				if ok {
 					// Find the first digit
 					pos := -1
@@ -600,9 +600,9 @@ func versionNumbers(url string, maxResults, crawlDepth int, includeFilenames boo
 						}
 					}
 					if pos > 0 {
-						// Check if the preceeding letter contains no special letters
-						preceeding := word[:pos]
-						if (len(preceeding) == 1) && !strings.Contains(LETTERS, string(preceeding[0])) {
+						// Check if the preceding letter contains no special letters
+						preceding := word[:pos]
+						if (len(preceding) == 1) && !strings.Contains(LETTERS, string(preceding[0])) {
 							ok = false
 						}
 					}
