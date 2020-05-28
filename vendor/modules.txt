@@ -1,4 +1,5 @@
-# github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+## explicit
 github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/pkg/term v0.0.0-20200520122047-c3ffed290a03
 github.com/pkg/term
@@ -10,11 +11,12 @@ github.com/shurcooL/sanitized_anchor_name
 # github.com/urfave/cli/v2 v2.2.0
 ## explicit
 github.com/urfave/cli/v2
-# github.com/xyproto/textoutput v1.11.1
+# github.com/xyproto/textoutput v1.12.0
 ## explicit
 github.com/xyproto/textoutput
-# github.com/xyproto/vt100 v1.8.3
+# github.com/xyproto/vt100 v1.8.5
+## explicit
 github.com/xyproto/vt100
-# golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
+# golang.org/x/sys v0.0.0-20200523222454-059865788121
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
