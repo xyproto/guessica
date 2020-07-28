@@ -10,7 +10,7 @@ import (
 	"github.com/xyproto/textoutput"
 )
 
-const versionString = "guessica 0.0.1"
+const versionString = "guessica 0.0.3"
 
 func main() {
 	o := textoutput.New()
