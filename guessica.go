@@ -736,6 +736,9 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 	} else if strings.HasPrefix(url, "https://") {
 		shortURL = url[8:]
 	}
+	if strings.HasSuffix(shortURL, "releases/latest") {
+		shortURL = shortURL[:len(shortURL)-len("releases/latest")]
+	}
 
 	gotCommit := ""
 
@@ -756,9 +759,6 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 	} else {
 		gotCommit = strings.TrimSpace(string(data))
 	}
-
-	//fmt.Println("new version: " + newVer)
-	//fmt.Println("new commit: " + gotCommit)
 
 	if len(gotCommit) == 0 {
 		return "", "", errors.New("got no git commit for tag " + tag + " or tag v" + tag)
