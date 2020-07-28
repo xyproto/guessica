@@ -31,6 +31,8 @@ var (
 	clientTimeout   time.Duration
 	noStripLetters  = false
 	defaultProtocol = "http" // If the protocol is missing
+
+	linkFinder = regexp.MustCompile(`(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
 )
 
 // unquote will strip a trimmed string from surrounding " or ' quotes
@@ -106,8 +108,7 @@ func getLinks(data string) []string {
 	}
 
 	// Then add the absolute links
-	re1 := regexp.MustCompile(`(http|ftp|https):\/\/([\w\-_]+(?:(?:\.[\w\-_]+)+))([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
-	return append(foundLinks, re1.FindAllString(data, -1)...)
+	return append(foundLinks, linkFinder.FindAllString(data, -1)...)
 }
 
 // Extract likely subpages
@@ -224,11 +225,11 @@ func crawlDomain(url string, depth int, examineFunc func(string, string, int)) {
 func versionNumbers(url string, maxResults, crawlDepth int, includeFilenames bool) []string {
 
 	const (
-		ALLOWED = "0123456789.-+_ABCDEFGHIJKLNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+		ALLOWED = "0123456789.-+_~ABCDEFGHIJKLNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 		LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 		UPPER   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		DIGITS  = "0123456789"
-		SPECIAL = ".-+_"
+		SPECIAL = ".-+_~"
 	)
 
 	// Mutex for storing words while crawling with several gorutines
@@ -492,7 +493,7 @@ func versionNumbers(url string, maxResults, crawlDepth int, includeFilenames boo
 				}
 				// Some words are usually not part of version numbers (but perhaps filenames)
 				if ok {
-					for _, unrelatedWord := range []string{"i686", "x86", "x64", "64bit", "32bit", "md5", "sha1"} {
+					for _, unrelatedWord := range []string{"i686", "x86", "x64", "64bit", "32bit", "md5", "sha1", "sha256"} {
 						if strings.Contains(word, unrelatedWord) {
 							ok = false
 							break
@@ -671,10 +672,6 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 		// Save url, pkgver, pkgrel and source
 		if strings.HasPrefix(line, "url=") {
 			rawURL = line[4:]
-			//} else if strings.HasPrefix(line, "pkgver=") {
-			//	rawPkgver = line[7:]
-			//} else if strings.HasPrefix(line, "pkgrel=") {
-			//	rawPkgrel = line[7:]
 		} else if strings.HasPrefix(line, "source=") {
 			rawSource = line[7:]
 			inSource = true
@@ -686,13 +683,6 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 		return "", "", errors.New("found no URL definition")
 	}
 
-	shortURL := url
-	if strings.HasPrefix(url, "http://") {
-		shortURL = url[7:]
-	} else if strings.HasPrefix(url, "https://") {
-		shortURL = url[8:]
-	}
-
 	if strings.Contains(url, "github.com/") && !strings.Contains(url, "/releases/") {
 		if strings.HasSuffix(url, "/") {
 			url += "releases/latest"
@@ -701,17 +691,50 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 		}
 	}
 
-	//fmt.Println("raw source: ", rawSource)
-	//fmt.Println("raw URL: ", rawURL)
-	//fmt.Println("url: ", url)
-	//fmt.Println("short URL: ", shortUrl)
-	//fmt.Println("pkgver", pkgver)
-	//fmt.Println("pkgrel", pkgrel)
+	var (
+		foundURL bool
+		newVer   string
+		err      error
+	)
 
-	//fmt.Println("getver: " + url)
-	newVer, err := getver(url)
-	if err != nil {
-		return "", "", errors.New("could not guess a version number by visiting " + url)
+	// Should the source array URL be used instead of the "url=" field?
+	if !strings.Contains(url, "github.com") && strings.Contains(rawSource, "github.com") {
+		// Use the url from the source instead of the url field
+		for _, sourceURL := range linkFinder.FindAllString(rawSource, -1) {
+			if strings.Contains(sourceURL, "#") {
+				sourceURL = strings.SplitN(sourceURL, "#", 2)[0]
+			}
+			if strings.HasSuffix(sourceURL, ".git") {
+				sourceURL = sourceURL[:len(sourceURL)-4]
+			}
+			getverURL := sourceURL
+			if strings.HasSuffix(getverURL, "/") {
+				getverURL += "releases/latest"
+			} else {
+				getverURL += "/releases/latest"
+			}
+			newVer, err = getver(getverURL)
+			if err == nil {
+				// ok
+				foundURL = true
+				url = sourceURL
+				break
+			}
+		}
+	}
+
+	if !foundURL {
+		newVer, err = getver(url)
+		if err != nil {
+			return "", "", errors.New("could not guess a version number by visiting " + url)
+		}
+	}
+
+	shortURL := url
+	if strings.HasPrefix(url, "http://") {
+		shortURL = url[7:]
+	} else if strings.HasPrefix(url, "https://") {
+		shortURL = url[8:]
 	}
 
 	gotCommit := ""
@@ -726,7 +749,7 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 		cmd = exec.Command("git", "ls-remote", "-t", "https://"+shortURL, "v"+tag)
 		data, err = cmd.CombinedOutput()
 		if err != nil || len(bytes.TrimSpace(data)) == 0 {
-			return "", "", errors.New("got no git commit has from tag " + tag + " or tag v" + tag + " at " + shortURL)
+			return "", "", errors.New("got no git commit hash from tag " + tag + " or tag v" + tag + " at " + shortURL)
 		}
 		gotCommit = strings.TrimSpace(string(data))
 		tag = "v" + newVer
