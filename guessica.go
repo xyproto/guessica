@@ -17,7 +17,8 @@ import (
 // The new version number is guessed after looking online for a newer source.
 // The git commit is included in the "source=" string, if possible.
 // Returns the new pkgver and the new source.
-func GuessSourceString(pkgbuildContents string) (string, string, error) {
+// commonGitServer is typically to set to "github.com"
+func GuessSourceString(pkgbuildContents, commonGitServer string) (string, string, error) {
 	lines := strings.Split(pkgbuildContents, "\n")
 	var rawURL, rawSource string
 	inSource := false
@@ -48,7 +49,7 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 		return "", "", errors.New("found no URL definition")
 	}
 
-	if strings.Contains(url, "github.com/") && !strings.Contains(url, "/releases/") {
+	if strings.Contains(url, commonGitServer + "/") && !strings.Contains(url, "/releases/") {
 		if strings.HasSuffix(url, "/") {
 			url += "releases/latest"
 		} else {
@@ -63,7 +64,7 @@ func GuessSourceString(pkgbuildContents string) (string, string, error) {
 	)
 
 	// Should the source array URL be used instead of the "url=" field?
-	if !strings.Contains(url, "github.com") && strings.Contains(rawSource, "github.com") {
+	if !strings.Contains(url, commonGitServer) && strings.Contains(rawSource, commonGitServer) {
 		// Use the url from the source instead of the url field
 		for _, sourceURL := range linkFinder.FindAllString(rawSource, -1) {
 			if strings.Contains(sourceURL, "#") {

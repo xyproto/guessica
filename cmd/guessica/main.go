@@ -46,7 +46,7 @@ func main() {
 					continue
 				}
 				pkgbuildContents := string(data)
-				pkgverLine, sourceLine, err := guessica.GuessSourceString(pkgbuildContents)
+				pkgverLine, sourceLine, err := guessica.GuessSourceString(pkgbuildContents, "github.com")
 				if err != nil {
 					o.Printf("<darkred>%s</darkred>\n", err)
 					continue
