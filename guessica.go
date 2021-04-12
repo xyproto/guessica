@@ -49,7 +49,7 @@ func GuessSourceString(pkgbuildContents, commonGitServer string) (string, string
 		return "", "", errors.New("found no URL definition")
 	}
 
-	if strings.Contains(url, commonGitServer + "/") && !strings.Contains(url, "/releases/") {
+	if strings.Contains(url, commonGitServer+"/") && !strings.Contains(url, "/releases/") {
 		if strings.HasSuffix(url, "/") {
 			url += "releases/latest"
 		} else {
