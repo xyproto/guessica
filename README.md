@@ -12,11 +12,11 @@ Update a `PKGBUILD` file by guessing the latest version number and finding the l
 
 ## Usage
 
-### Try to detect the latest version
+### Detect the latest version
 
 	guessica PKGBUILD
 
-### Try to detect the latest version and write the changes back to the PKGBUILD
+### Detect the latest version and write the changes back to the PKGBUILD
 
     guessica -i PKGBUILD
 
