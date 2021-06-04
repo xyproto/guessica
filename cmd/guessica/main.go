@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -10,7 +11,7 @@ import (
 	"github.com/xyproto/textoutput"
 )
 
-const versionString = "guessica 0.0.4"
+var likelySites = []string{"github.com", "gitlab.com", "sr.ht"}
 
 func main() {
 	o := textoutput.New()
@@ -18,11 +19,12 @@ func main() {
 		Name:  "guessica",
 		Usage: "Update a PKGBUILD by guessing the new pkgbuild and source array",
 		Flags: []cli.Flag{
-			&cli.BoolFlag{Name: "version", Aliases: []string{"V"}},
+			&cli.BoolFlag{Name: "version", Aliases: []string{"V"}, Usage: "verbose"},
+			&cli.BoolFlag{Name: "i", Usage: "write changes"},
 		},
 		Action: func(c *cli.Context) error {
 			if c.Bool("version") {
-				o.Println(versionString)
+				o.Println(guessica.VersionString)
 				os.Exit(0)
 			}
 			pkgbuildFilenames := []string{"PKGBUILD"}
@@ -38,36 +40,54 @@ func main() {
 			// Treat all arguments as PKGBUILD files that are to be updated
 			var err error
 			for _, pkgbuildFilename := range pkgbuildFilenames {
-				o.Printf("<lightblue>Updating</lightblue> <white>%s</white>... ", pkgbuildFilename)
+				if c.Bool("i") { // Write changes
+					o.Printf("<darkgray>[<white>%s<darkgray>] <lightblue>Updating to version</lightblue>... ", filepath.Base(pkgbuildFilename))
+				}
 
 				data, err := ioutil.ReadFile(pkgbuildFilename)
 				if err != nil {
 					o.Printf("<darkred>%s</darkred>\n", err)
 					continue
 				}
-				pkgbuildContents := string(data)
-				pkgverLine, sourceLine, err := guessica.GuessSourceString(pkgbuildContents, "github.com")
+				var (
+					pkgbuildContents = string(data)
+					ver              string
+					sourceLine       string
+				)
+				for _, site := range likelySites {
+					if strings.Contains(pkgbuildContents, site) {
+						ver, sourceLine, err = guessica.GuessSourceString(pkgbuildContents, site)
+						if err == nil {
+							break
+						}
+					}
+				}
 				if err != nil {
 					o.Printf("<darkred>%s</darkred>\n", err)
 					continue
-
 				}
 				var sb strings.Builder
 				for _, line := range strings.Split(pkgbuildContents, "\n") {
 					if strings.HasPrefix(line, "pkgver=") {
-						sb.WriteString(pkgverLine + "\n")
+						sb.WriteString("pkgver=" + ver + "\n")
 					} else if strings.HasPrefix(line, "source=") {
 						sb.WriteString(sourceLine + "\n")
 					} else {
 						sb.WriteString(line + "\n")
 					}
 				}
-				err = ioutil.WriteFile(pkgbuildFilename, []byte(strings.TrimSpace(sb.String())), 0664)
-				if err != nil {
-					o.Printf("<darkred>%s</darkred>\n", err)
-					continue
+				if c.Bool("i") {
+					// Write changes
+					err = ioutil.WriteFile(pkgbuildFilename, []byte(strings.TrimSpace(sb.String())), 0664)
+					if err != nil {
+						o.Printf("<darkred>%s</darkred>\n", err)
+						continue
+					}
+					o.Printf("<cyan>%s</cyan>\n", ver)
+				} else {
+					// Just output the version number, if found
+					o.Printf("<white>Found version: <lightblue>%s</lightblue>\n", ver)
 				}
-				o.Printf("<lightgreen>%s</lightgreen>\n", "ok")
 			}
 			return err
 		},

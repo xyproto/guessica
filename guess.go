@@ -17,7 +17,7 @@ import (
 // The new version number is guessed after looking online for a newer source.
 // The git commit is included in the "source=" string, if possible.
 // Returns the new pkgver and the new source.
-// commonGitServer is typically to set to "github.com"
+// commonGitServer is often set to ie. "github.com"
 func GuessSourceString(pkgbuildContents, commonGitServer string) (string, string, error) {
 	lines := strings.Split(pkgbuildContents, "\n")
 	var rawURL, rawSource string
@@ -163,5 +163,5 @@ func GuessSourceString(pkgbuildContents, commonGitServer string) (string, string
 		return "", "", errors.New("found no new version number")
 	}
 
-	return "pkgver=" + newVer, "source=" + newSource, nil
+	return newVer, "source=" + newSource, nil
 }

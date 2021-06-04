@@ -12,16 +12,20 @@ Update a `PKGBUILD` file by guessing the latest version number and finding the l
 
 ## Usage
 
+### Try to detect the latest version
+
 	guessica PKGBUILD
+
+### Try to detect the latest version and write the changes back to the PKGBUILD
+
+    guessica -i PKGBUILD
 
 ## Note
 
 The `pkgver` and `source` arrays will be guessed by searching the project webpage as defined by the `url`. For for projects on GitHub, `github.com` may also be visited.
 
-Updating a `PKGBUILD` may or may not work. `guessica` will be doing its best, by guessing. Take a backup of your `PKGBUILD` first, if you need to.
-
 ## General info
 
-* Version: 0.0.4
+* Version: 1.0.0
 * License: MIT
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
