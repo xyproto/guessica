@@ -11,8 +11,6 @@ import (
 	"github.com/xyproto/textoutput"
 )
 
-var likelySites = []string{"github.com", "gitlab.com", "sr.ht"}
-
 func main() {
 	o := textoutput.New()
 	if appErr := (&cli.App{
@@ -54,7 +52,7 @@ func main() {
 					ver              string
 					sourceLine       string
 				)
-				for _, site := range likelySites {
+				for _, site := range guessica.SpecificSites {
 					if strings.Contains(pkgbuildContents, site) {
 						ver, sourceLine, err = guessica.GuessSourceString(pkgbuildContents, site)
 						if err == nil {
