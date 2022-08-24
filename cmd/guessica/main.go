@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,15 +24,14 @@ func main() {
 				o.Println(guessica.VersionString)
 				os.Exit(0)
 			}
-			pkgbuildFilenames := []string{"PKGBUILD"}
 
 			// Check if any arguments are given
-			if c.NArg() > 0 {
-				pkgbuildFilenames = c.Args().Slice()
-			} else {
+			if c.NArg() <= 0 {
 				o.Printf("<lightblue>%s</lightblue> <white>%s</white> <lightblue>%s</lightblue>\n", "Please provide one or more", "PKGBUILD", "filenames")
 				os.Exit(1)
 			}
+
+			pkgbuildFilenames := c.Args().Slice()
 
 			// Treat all arguments as PKGBUILD files that are to be updated
 			var err error
@@ -42,7 +40,7 @@ func main() {
 					o.Printf("<darkgray>[<white>%s<darkgray>] <lightblue>Updating to version</lightblue>... ", filepath.Base(pkgbuildFilename))
 				}
 
-				data, err := ioutil.ReadFile(pkgbuildFilename)
+				data, err := os.ReadFile(pkgbuildFilename)
 				if err != nil {
 					o.Printf("<darkred>%s</darkred>\n", err)
 					continue
@@ -78,7 +76,7 @@ func main() {
 				}
 				if c.Bool("i") {
 					// Write changes
-					err = ioutil.WriteFile(pkgbuildFilename, []byte(strings.TrimSpace(sb.String())), 0664)
+					err = os.WriteFile(pkgbuildFilename, []byte(strings.TrimSpace(sb.String())), 0664)
 					if err != nil {
 						o.Printf("<darkred>%s</darkred>\n", err)
 						continue
