@@ -26,7 +26,7 @@ The `pkgver` and `source` arrays will be guessed by searching the project webpag
 
 ## General info
 
-* Version: 1.1.0
+* Version: 1.1.1
 * License: BSD-3
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 
