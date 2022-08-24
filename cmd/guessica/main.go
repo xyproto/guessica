@@ -62,11 +62,14 @@ func main() {
 					o.Printf("<darkred>%s</darkred>\n", err)
 					continue
 				}
+
+				foundNewVersion := !strings.Contains(pkgbuildContents, "pkgver="+ver)
+
 				var sb strings.Builder
 				for _, line := range strings.Split(pkgbuildContents, "\n") {
 					if strings.HasPrefix(line, "pkgver=") {
 						sb.WriteString("pkgver=" + ver + "\n")
-					} else if strings.HasPrefix(line, "pkgrel=") {
+					} else if foundNewVersion && strings.HasPrefix(line, "pkgrel=") {
 						sb.WriteString("pkgrel=1\n")
 					} else if strings.HasPrefix(line, "source=") {
 						sb.WriteString(sourceLine + "\n")
