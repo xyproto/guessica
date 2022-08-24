@@ -1,3 +1,4 @@
+// Package guessica provides a way to guess the latest source URL for a PKGBUILD
 package guessica
 
 import (
