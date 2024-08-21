@@ -4,7 +4,7 @@
 
 Update a `PKGBUILD` file by guessing the latest version number and finding the latest git tag and hash online.
 
-This utility is a bit experimental and needs a version 2 that can improve the detection and hash sum generation.
+This utility is a bit experimental and needs a version 2 that can improve the detection and hash sum generation. Perhaps by using LLMs.
 
 ![logo](img/guessica.svg)
 
